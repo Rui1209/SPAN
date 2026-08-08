@@ -1,4 +1,5 @@
 import torch
+import time
 from collections import OrderedDict
 from os import path as osp
 from tqdm import tqdm
@@ -196,13 +197,19 @@ class SRModel(BaseModel):
             self.metric_results = {metric: 0 for metric in self.metric_results}
 
         metric_data = dict()
+        inference_times = []
         if use_pbar:
             pbar = tqdm(total=len(dataloader), unit='image')
 
         for idx, val_data in enumerate(dataloader):
             img_name = osp.splitext(osp.basename(val_data['lq_path'][0]))[0]
             self.feed_data(val_data)
+
+            torch.cuda.synchronize()
+            t0 = time.time()
             self.test()
+            torch.cuda.synchronize()
+            inference_times.append(time.time() - t0)
 
             visuals = self.get_current_visuals()
             sr_img = tensor2img([visuals['result']])
@@ -239,6 +246,8 @@ class SRModel(BaseModel):
                 pbar.set_description(f'Test {img_name}')
         if use_pbar:
             pbar.close()
+
+        self._inference_times = inference_times
 
         if with_metrics:
             for metric in self.metric_results.keys():
