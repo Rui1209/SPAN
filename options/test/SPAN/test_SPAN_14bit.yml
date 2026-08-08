@@ -1,0 +1,31 @@
+name: SPAN_x4_14bit_NCSIST
+model_type: SRModel14bit
+scale: 4
+num_gpu: 1
+manual_seed: 0
+
+datasets:
+  test_1:
+    name: TIFF14bit
+    type: SingleImage14bitDataset
+    dataroot_lq: C:/Users/Ada/Desktop/dataset/NCSIST_img/14bit/14_bit_640_480_lr
+    io_backend:
+      type: disk
+
+network_g:
+  type: SPAN
+  num_in_ch: 3
+  num_out_ch: 3
+  feature_channels: 48
+  upscale: 4
+  img_range: 255.
+  rgb_mean: [0.4488, 0.4371, 0.4040]
+
+path:
+  pretrain_network_g: span/spanx4_ch48.pth
+  strict_load_g: true
+  param_key_g: params_ema
+
+val:
+  save_img: true
+  pbar: true
