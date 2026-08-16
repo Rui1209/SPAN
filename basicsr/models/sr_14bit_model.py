@@ -5,6 +5,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 import torch
+import time
 from tqdm import tqdm
 
 from basicsr.models.sr_model import SRModel
@@ -23,12 +24,19 @@ class SRModel14bit(SRModel):
         output_root = osp.join(self.opt['path']['visualization'], dataset_name)
         os.makedirs(output_root, exist_ok=True)
         use_pbar = self.opt['val'].get('pbar', False)
+        inference_times = []
         iterator = tqdm(dataloader, total=len(dataloader), unit='image') if use_pbar else dataloader
 
         with torch.inference_mode():
             for val_data in iterator:
                 self.feed_data(val_data)
+                if torch.cuda.is_available():
+                    torch.cuda.synchronize()
+                start_time = time.perf_counter()
                 self.test()
+                if torch.cuda.is_available():
+                    torch.cuda.synchronize()
+                inference_times.append(time.perf_counter() - start_time)
                 if save_img:
                     source_path = Path(val_data['lq_path'][0]).resolve()
                     input_root = Path(dataloader.dataset.lq_folder).resolve()
@@ -41,6 +49,7 @@ class SRModel14bit(SRModel):
                     torch.cuda.empty_cache()
                 if use_pbar:
                     iterator.set_description(f'Test {source_path.name}')
+        self._inference_times = inference_times
 
 
 def save_tiff(tensor, output_path, is_grayscale):

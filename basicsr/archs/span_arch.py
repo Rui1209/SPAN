@@ -113,6 +113,7 @@ class Conv3XC(nn.Module):
         self.eval_conv = nn.Conv2d(in_channels=c_in, out_channels=c_out, kernel_size=3, padding=1, stride=s, bias=bias)
         self.eval_conv.weight.requires_grad = False
         self.eval_conv.bias.requires_grad = False
+        self.deployed = False
         self.update_params()
 
     def update_params(self):
@@ -144,8 +145,15 @@ class Conv3XC(nn.Module):
         self.eval_conv.bias.data = self.bias_concat
 
 
+    def deploy(self):
+        if not self.deployed:
+            self.update_params()
+            self.deployed = True
+
     def forward(self, x):
-        if self.training:
+        if self.deployed:
+            out = self.eval_conv(x)
+        elif self.training:
             pad = 1
             x_pad = F.pad(x, (pad, pad, pad, pad), "constant", 0)
             out = self.conv(x_pad) + self.sk(x)
@@ -244,6 +252,11 @@ class SPAN(nn.Module):
         output = self.upsampler(out)
 
         return output
+
+    def deploy(self):
+        for module in self.modules():
+            if isinstance(module, Conv3XC):
+                module.deploy()
 
 if __name__ == "__main__":
     from fvcore.nn import FlopCountAnalysis, flop_count_table
