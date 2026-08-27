@@ -69,11 +69,16 @@ class PairedImageDataset(data.Dataset):
         # Load gt and lq images. Dimension order: HWC; channel order: BGR;
         # image range: [0, 1], float32.
         gt_path = self.paths[index]['gt_path']
+        read_flag = 'grayscale' if self.opt.get('color') == 'gray' else 'color'
         img_bytes = self.file_client.get(gt_path, 'gt')
-        img_gt = imfrombytes(img_bytes, float32=True)
+        img_gt = imfrombytes(img_bytes, flag=read_flag, float32=True)
+        if img_gt.ndim == 2:
+            img_gt = img_gt[..., None]
         lq_path = self.paths[index]['lq_path']
         img_bytes = self.file_client.get(lq_path, 'lq')
-        img_lq = imfrombytes(img_bytes, float32=True)
+        img_lq = imfrombytes(img_bytes, flag=read_flag, float32=True)
+        if img_lq.ndim == 2:
+            img_lq = img_lq[..., None]
 
         # augmentation for training
         if self.opt['phase'] == 'train':
@@ -94,7 +99,7 @@ class PairedImageDataset(data.Dataset):
             img_gt = img_gt[0:img_lq.shape[0] * scale, 0:img_lq.shape[1] * scale, :]
 
         # BGR to RGB, HWC to CHW, numpy to tensor
-        img_gt, img_lq = img2tensor([img_gt, img_lq], bgr2rgb=True, float32=True)
+        img_gt, img_lq = img2tensor([img_gt, img_lq], bgr2rgb=read_flag == 'color', float32=True)
         # normalize
         if self.mean is not None or self.std is not None:
             normalize(img_lq, self.mean, self.std, inplace=True)
