@@ -1,0 +1,38 @@
+# SPANV2 single-channel raw-in raw-out zero-shot testing (headerless 14-bit RAW).
+name: SPANV2_x4_raw_zerotest
+model_type: SRModelRaw
+scale: 4
+num_gpu: 1 # set num_gpu: 0 for cpu mode
+manual_seed: 0
+
+datasets:
+  test_1:
+    name: VideoRaw1_14bit
+    type: Raw14bitDataset
+    dataroot_lq: C:/Users/Ada/Desktop/14-bit_raw/14-bit_raw_640_480
+    raw_size: [480, 640] # (height, width)
+    bit_depth: 14
+    io_backend:
+      type: disk
+
+network_g:
+  type: SPANV2_ESR
+  num_in_ch: 1
+  num_out_ch: 1
+  feature_channels: 32
+  upscale: 4
+  bias: false
+  use_span_attn: false
+
+path:
+  pretrain_network_g: experiments/SPANV2_x4_gray_from_scratch_1.4/models/net_g_295000.pth
+  strict_load_g: true
+  param_key_g: params_ema
+
+val:
+  save_img: true
+  pbar: true
+  raw_out:
+    save_x4: true
+    save_1920x1080: false
+    save_preview_png: true
