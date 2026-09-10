@@ -74,6 +74,18 @@ def build_dataloader(dataset, dataset_opt, num_gpu=1, dist=False, sampler=None, 
             dataloader_args['shuffle'] = True
         dataloader_args['worker_init_fn'] = partial(
             worker_init_fn, num_workers=num_workers, rank=rank, seed=seed) if seed is not None else None
+        collate_fn_type = dataset_opt.get('collate_fn')
+        if collate_fn_type is not None:
+            if collate_fn_type == 'paired_multi_shape':
+                from basicsr.data.paired_multi_shape_dataset import paired_multi_shape_collate
+                dataloader_args['collate_fn'] = partial(
+                    paired_multi_shape_collate,
+                    gt_shapes=dataset_opt['gt_shapes'],
+                    scale=dataset_opt['scale'],
+                    use_hflip=dataset_opt.get('use_hflip', True),
+                    use_rot=dataset_opt.get('use_rot', True))
+            else:
+                raise ValueError(f'collate_fn {collate_fn_type} is not supported yet.')
     elif phase in ['val', 'test']:  # validation
         dataloader_args = dict(dataset=dataset, batch_size=1, shuffle=False, num_workers=0)
     else:

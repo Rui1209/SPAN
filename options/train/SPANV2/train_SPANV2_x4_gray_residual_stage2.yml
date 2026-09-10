@@ -1,0 +1,96 @@
+# SPANV2_Residual Stage 2 (official fine-tuning): fixed 512x512 HR crops,
+# MSE + gradient loss, AdamW lr 5e-4, cosine annealing with one warm restart
+# at 600k iters (restart weight 0.5), total 1M iters. Initialized from the
+# Stage 1 final EMA checkpoint.
+name: SPANV2_x4_gray_residual_stage2
+model_type: SRModel
+scale: 4
+num_gpu: 1
+manual_seed: 10
+
+datasets:
+  train:
+    name: CustomTrain
+    type: PairedImageDataset
+    dataroot_gt: C:/Users/Ada/Desktop/dataset_train_v1/train/HR
+    dataroot_lq: C:/Users/Ada/Desktop/dataset_train_v1/train/LR
+    io_backend:
+      type: disk
+    color: gray
+    gt_size: 512
+    use_hflip: true
+    use_rot: true
+    num_worker_per_gpu: 4
+    batch_size_per_gpu: 8
+    dataset_enlarge_ratio: 1
+  val:
+    name: CustomVal
+    type: PairedImageDataset
+    dataroot_gt: C:/Users/Ada/Desktop/dataset_train_v1/val/HR
+    dataroot_lq: C:/Users/Ada/Desktop/dataset_train_v1/val/LR
+    io_backend:
+      type: disk
+    color: gray
+
+network_g:
+  type: SPANV2_ESR_Residual
+  num_in_ch: 1
+  num_out_ch: 1
+  feature_channels: 32
+  upscale: 4
+  bias: false
+  use_span_attn: false
+
+path:
+  pretrain_network_g: C:/Users/Ada/Desktop/SPAN/experiments/SPANV2_x4_gray_residual_stage1/models/net_g_1000000.pth
+  param_key_g: params_ema
+  strict_load_g: true
+  resume_state: ~
+
+train:
+  ema_decay: 0.999
+  optim_g:
+    type: AdamW
+    lr: !!float 5e-4
+    weight_decay: !!float 1e-4
+    betas: [0.9, 0.99]
+  scheduler:
+    type: CosineAnnealingRestartLR
+    periods: [600000, 400000]
+    restart_weights: [1, 0.5]
+    eta_min: !!float 1e-6
+  total_iter: 1000000
+  warmup_iter: -1
+  pixel_opt:
+    type: MSELoss
+    loss_weight: 5.0
+    reduction: mean
+  gradient_opt:
+    type: GradientLoss
+    loss_weight: 3.0
+    reduction: mean
+
+val:
+  val_freq: !!float 5e3
+  save_img: true
+  metrics:
+    psnr:
+      type: calculate_psnr
+      crop_border: 4
+      test_y_channel: false
+    ssim:
+      type: calculate_ssim
+      crop_border: 4
+      test_y_channel: false
+
+logger:
+  print_freq: 1000
+  save_checkpoint_freq: !!float 5e3
+  use_tb_logger: true
+  wandb:
+    project: ~
+    resume_id: ~
+
+dist_params:
+  backend: nccl
+  port: 29500

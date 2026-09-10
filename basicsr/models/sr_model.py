@@ -64,8 +64,18 @@ class SRModel(BaseModel):
         else:
             self.cri_perceptual = None
 
-        if self.cri_pix is None and self.cri_perceptual is None:
-            raise ValueError('Both pixel and perceptual losses are None.')
+        if train_opt.get('fft_opt'):
+            self.cri_fft = build_loss(train_opt['fft_opt']).to(self.device)
+        else:
+            self.cri_fft = None
+
+        if train_opt.get('gradient_opt'):
+            self.cri_grad = build_loss(train_opt['gradient_opt']).to(self.device)
+        else:
+            self.cri_grad = None
+
+        if self.cri_pix is None and self.cri_perceptual is None and self.cri_fft is None and self.cri_grad is None:
+            raise ValueError('All losses (pixel, perceptual, fft, gradient) are None.')
 
         # set up optimizers and schedulers
         self.setup_optimizers()
@@ -110,6 +120,16 @@ class SRModel(BaseModel):
             if l_style is not None:
                 l_total += l_style
                 loss_dict['l_style'] = l_style
+        # fft loss
+        if self.cri_fft:
+            l_fft = self.cri_fft(self.output, self.gt)
+            l_total += l_fft
+            loss_dict['l_fft'] = l_fft
+        # gradient loss
+        if self.cri_grad:
+            l_grad = self.cri_grad(self.output, self.gt)
+            l_total += l_grad
+            loss_dict['l_grad'] = l_grad
 
         l_total.backward()
         self.optimizer_g.step()

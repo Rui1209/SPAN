@@ -1,4 +1,4 @@
-name: SPAN_x4_14bit_NCSIST
+name: SPAN_x4_0910
 model_type: SRModel14bit
 scale: 4
 num_gpu: 1
@@ -8,7 +8,7 @@ datasets:
   test_1:
     name: TIFF14bit
     type: SingleImage14bitDataset
-    dataroot_lq: C:/Users/Ada/Desktop/dataset/NCSIST_img/14bit/14_bit_640_480_lr
+    dataroot_lq: C:/Users/Ada/Desktop/Building_0910/LR_14-bit_tiff_bilinear
     io_backend:
       type: disk
 

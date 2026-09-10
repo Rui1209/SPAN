@@ -21,6 +21,9 @@ class SingleImage14bitDataset(data.Dataset):
         self.file_client = None
         self.io_backend_opt = opt['io_backend']
         self.lq_folder = opt['dataroot_lq']
+        self.out_channels = opt.get('out_channels', 3)
+        if self.out_channels not in (1, 3):
+            raise ValueError(f'out_channels must be 1 or 3, got {self.out_channels}')
 
         if self.io_backend_opt['type'] == 'lmdb':
             self.io_backend_opt['db_paths'] = [self.lq_folder]
@@ -59,8 +62,11 @@ class SingleImage14bitDataset(data.Dataset):
 
         image = image.astype(np.float32) / MAX_14BIT
         if image.shape[2] == 1:
-            image = np.repeat(image, 3, axis=2)
+            if self.out_channels == 3:
+                image = np.repeat(image, 3, axis=2)
         else:
+            if self.out_channels == 1:
+                raise ValueError(f'out_channels=1 requires grayscale TIFF, got {image.shape}: {lq_path}')
             image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
         return {

@@ -1,5 +1,5 @@
 # SPAN raw-in raw-out zero-shot testing (headerless 14-bit RAW, mono repeated to 3ch).
-name: SPAN_x4_raw_zerotest
+name: SPAN_x4_raw_school
 model_type: SRModelRaw
 scale: 4
 num_gpu: 1 # set num_gpu: 0 for cpu mode
@@ -7,10 +7,10 @@ manual_seed: 0
 
 datasets:
   test_1:
-    name: VideoRaw1_14bit
+    name: Building
     type: Raw14bitDataset
-    dataroot_lq: C:/Users/Ada/Desktop/14-bit_raw/14-bit_raw_640_480
-    raw_size: [480, 640] # (height, width)
+    dataroot_lq: F:/school
+    raw_size: [120, 160] # (height, width)
     bit_depth: 14
     out_channels: 3 # mono repeated to 3ch for the RGB-pretrained SPAN
     io_backend:

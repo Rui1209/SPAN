@@ -1,0 +1,40 @@
+# SPANV2 single-channel raw-in raw-out testing (headerless 14-bit RAW).
+# Weights: experiments/SPANV2_x4_gray_from_scratch_1.2 @ iter 295000 (params_ema)
+# Input : F:/Building/RAW_LR (1746x1165) -> Output x4: 6984x4660
+name: SPANV2_x4_1.2_school
+model_type: SRModelRaw
+scale: 4
+num_gpu: 1 # set num_gpu: 0 for cpu mode
+manual_seed: 0
+
+datasets:
+  test_1:
+    name: Building_RAW_LR
+    type: Raw14bitDataset
+    dataroot_lq: F:/school
+    raw_size: [120, 160] # (height, width)
+    bit_depth: 14
+    io_backend:
+      type: disk
+
+network_g:
+  type: SPANV2_ESR
+  num_in_ch: 1
+  num_out_ch: 1
+  feature_channels: 32
+  upscale: 4
+  bias: false
+  use_span_attn: false
+
+path:
+  pretrain_network_g: experiments/SPANV2_x4_gray_from_scratch_1.2/models/net_g_295000.pth
+  strict_load_g: true
+  param_key_g: params_ema
+
+val:
+  save_img: true
+  pbar: true
+  raw_out:
+    save_x4: true
+    save_1920x1080: false
+    save_preview_png: false

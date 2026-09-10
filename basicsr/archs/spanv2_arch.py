@@ -43,7 +43,7 @@ class SPABV2(nn.Module):
         guidance_map = self.guidance_map_conv(f3)
         # 另外加的，計算注意力0.8次方
         guidance_map = (
-            torch.sign(guidance_map) * torch.abs(guidance_map).clamp_min(1e-6).pow(2.0)
+            torch.sign(guidance_map) * torch.abs(guidance_map).clamp_min(1e-6).pow(1.2)
         )
         return (x + f3) * guidance_map
 

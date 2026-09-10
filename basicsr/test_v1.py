@@ -65,14 +65,15 @@ def profile_model(model, logger, mode_size, max_size):
     logger.info(f'Model weights memory: {weights_bytes / 1024 ** 2:.2f} MB')
 
     device = next(net.parameters()).device
-    dummy = torch.rand(1, 3, mode_size[0], mode_size[1], device=device)
+    in_chans = model.opt['network_g'].get('num_in_ch', 3)
+    dummy = torch.rand(1, in_chans, mode_size[0], mode_size[1], device=device)
     with torch.no_grad():
         analysis = FlopCountAnalysis(net, dummy)
     logger.info(f'FLOPs (mode {mode_size[1]}x{mode_size[0]}): {analysis.total() / 1e9:.4f} GFLOPs')
     logger.info(flop_count_table(analysis))
 
     if max_size != mode_size:
-        max_dummy = torch.rand(1, 3, max_size[0], max_size[1], device=device)
+        max_dummy = torch.rand(1, in_chans, max_size[0], max_size[1], device=device)
         with torch.no_grad():
             max_analysis = FlopCountAnalysis(net, max_dummy)
         logger.info(f'FLOPs (max {max_size[1]}x{max_size[0]}): {max_analysis.total() / 1e9:.4f} GFLOPs')
